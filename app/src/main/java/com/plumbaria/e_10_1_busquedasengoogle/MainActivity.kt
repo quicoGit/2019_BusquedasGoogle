@@ -1,5 +1,7 @@
 package com.plumbaria.e_10_1_busquedasengoogle
 
+import android.app.ProgressDialog
+import android.os.AsyncTask
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.StrictMode
@@ -18,18 +20,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().permitNetwork().build())
     }
 
     fun buscar(view: View){
-        try{
-            var palabras= EditText01.text.toString()
-            var resultado = resultadosGoogle(palabras)
-            TextView01.append(palabras + "--" + resultado + "\n")
-        } catch (e : Exception){
-            TextView01.append("Error al conectar\n")
-            Log.e("HTTP", e.message,e)
-        }
+        var palabras= EditText01.text.toString()
+        TextView01.append(palabras + "--")
+        BuscarGoogle().execute(palabras)
     }
 
     fun resultadosGoogle(palabras : String): String {
@@ -64,5 +60,40 @@ class MainActivity : AppCompatActivity() {
         }
         conexion.disconnect()
         return devuelve
+    }
+
+
+    inner class BuscarGoogle : AsyncTask<String,Void,String>() {
+
+
+        lateinit var progreso: ProgressDialog
+
+        override fun onPreExecute() {
+            progreso = ProgressDialog(this@MainActivity)
+            progreso.setProgressStyle(ProgressDialog.STYLE_SPINNER)
+            progreso.setMessage("Accediendo a Google...")
+            progreso.setCancelable(false)
+            progreso.show()
+        }
+
+        override fun doInBackground(vararg p0: String?): String {
+            try {
+                return resultadosGoogle(p0[0].toString())
+            } catch (e: Exception) {
+                cancel(true)
+                Log.e("HTTP", e.message, e)
+                return null.toString()
+            }
+        }
+
+        override fun onPostExecute(result: String?) {
+            progreso.dismiss()
+            TextView01.append(result + "\n")
+        }
+
+        override fun onCancelled() {
+            progreso.dismiss()
+            TextView01.append("Error al conectar\n")
+        }
     }
 }
